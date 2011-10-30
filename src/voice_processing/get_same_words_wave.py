@@ -72,10 +72,12 @@ def read_word(word, speaker):
     # import pdb; pdb.set_trace()
     Pxx, freqs, bins, im = P.specgram(x=data[1], NFFT = 256, Fs=freq, 
                                     noverlap=overlap_size)
-    #P.plot(data[1])
     #import pdb; pdb.set_trace()
+    P.clf()
     print Pxx.shape
+    P.plot(data[1], 'b')
     P.savefig('%s_%s.png' % (word, speaker))
+    P.clf()
     # For now, cut the spectrogram to make it fit
     # TODO: should use PCA instead
     # if not Pxx.shape == (129, 165):
@@ -124,7 +126,6 @@ for word in words:
         right_len_words.append(word)
 
 print len(right_len_words)
-import pdb; pdb.set_trace()
 word_voices_list = {}
 
 for word in right_len_words:
@@ -138,7 +139,7 @@ for word in right_len_words:
             (wav, Pxx) = res
             # Pxx = N.log(Pxx)
             NP = N.log(Pxx.flatten()+1)
-            word_voices.append(NP)
+            word_voices.append(wav)
             spec_list.append(NP)
             wav_list.append(wav)
         else:
@@ -150,19 +151,18 @@ print 'done with words, writing to gzip...'
 
 # import pdb; pdb.set_trace()
 
-OUTPUT_WAV = False
-OUTPUT_SPEC = True
-
-import pdb; pdb.set_trace()
+OUTPUT_WAV = True
+OUTPUT_SPEC = False
 
 for word, word_voices in word_voices_list.items():
-    datafile = gzip.open('spec_%s.pkl.gz' % word, 'w')
-    C.dump(N.array(word_voices), datafile)
+    datafile = gzip.open('wav_%s.pkl.gz' % word, 'w')
+    nwav = N.array(word_voices)/(2.0**16) + 0.5
+    C.dump(nwav, datafile)
     datafile.close()
 
 if OUTPUT_WAV:
     datafile = gzip.open('wav_data_%d.pkl.gz' % counter, 'w')
-    nwav = N.array(wav_list)/2.0**16 + 0.5
+    nwav = N.array(wav_list)/(2.0**16) + 0.5
     C.dump(nwav, datafile)
     datafile.close()
 

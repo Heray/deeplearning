@@ -75,7 +75,8 @@ def read_word(word, speaker):
     #P.plot(data[1])
     #import pdb; pdb.set_trace()
     print Pxx.shape
-    P.savefig('%s_%s.png' % (word, speaker))
+    # P.savefig('%s_%s.png' % (word, speaker))
+    P.clf()
     # For now, cut the spectrogram to make it fit
     # TODO: should use PCA instead
     # if not Pxx.shape == (129, 165):
@@ -105,29 +106,11 @@ for word in words:
         W.write('%s_%s_cut.wav' % (word, speaker), 22050, wav_data)
 '''
 
-for word in words:
-    word = word.replace('\n','')
-    is_right_len = True
-    # if len(word) < 2: continue
-    for speaker in voices:
-        try:
-            data = W.read('/home/heray/Workspace/data/cut_training_voices/%s_%s_cut.wav' % (word, speaker))
-        except:
-            is_right_len = False
-            break
-        wav_data = data[1]
-        if len(wav_data) > LIMIT or len(wav_data) < LIMIT * 0.7:
-            is_right_len = False
-            print 'word %s not right length %d' % (word, len(wav_data))
-            break
-    if is_right_len:
-        right_len_words.append(word)
-
 print len(right_len_words)
-import pdb; pdb.set_trace()
 word_voices_list = {}
 
-for word in right_len_words:
+for word in words:
+    word = word.replace('\n','')
     print word
     word_voices = []
     # if len(word) < 2: continue
@@ -141,9 +124,6 @@ for word in right_len_words:
             word_voices.append(NP)
             spec_list.append(NP)
             wav_list.append(wav)
-        else:
-            raise Exception('No speaker %s found for word %s' % (speaker,word))
-    word_voices_list[word] = word_voices
 
 print 'samples size: %s' % counter
 print 'done with words, writing to gzip...'
@@ -152,13 +132,6 @@ print 'done with words, writing to gzip...'
 
 OUTPUT_WAV = False
 OUTPUT_SPEC = True
-
-import pdb; pdb.set_trace()
-
-for word, word_voices in word_voices_list.items():
-    datafile = gzip.open('spec_%s.pkl.gz' % word, 'w')
-    C.dump(N.array(word_voices), datafile)
-    datafile.close()
 
 if OUTPUT_WAV:
     datafile = gzip.open('wav_data_%d.pkl.gz' % counter, 'w')
