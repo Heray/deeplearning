@@ -296,10 +296,10 @@ def spec2log(X):
 def log2spec(X):
     return (10**X)-1
 
-def test_rbm(learning_rate=0.1, training_epochs = 9, # 15
+def test_rbm(learning_rate=0.1, training_epochs = 2, # 15
              dataset='../data/mnist.pkl.gz', batch_size = 20, # 20
-             n_chains = 20, n_samples = 10, output_folder = 'sp_rbm_plots',
-             n_hidden = 500, freq_rows=129, timebins_cols=112):
+             n_chains = 20, n_samples = 10, output_folder = 'sp_rbm_plots_5000',
+             n_hidden = 5000, freq_rows=129, timebins_cols=133):
     """
     Demonstrate how to train and afterwards sample from it using Theano.
 
@@ -319,8 +319,8 @@ def test_rbm(learning_rate=0.1, training_epochs = 9, # 15
 
     """
 
-
-    dataset = '../sound_processing/spectrogram_data_248.pkl.gz'
+    dataset = '/home/heray/Workspace/data/rbm_training_input/spec_overlapsize_160/spec_data_180.pkl.gz'
+    #dataset = '../sound_processing/spectrogram_data_248.pkl.gz'
     f = gzip.open(dataset,'rb')
     raw_datasets = cPickle.load(f)[:40]  #240
     f.close()
@@ -329,8 +329,10 @@ def test_rbm(learning_rate=0.1, training_epochs = 9, # 15
     # datasets = log2spec(raw_datasets) # avoid -inf
     datasets = raw_datasets
 
-    datasets[datasets > 12] = 12.0  # TODO: very arbituate!
-    datasets /= 12.0  # round up to 0 ~ 1
+    SIZESHIFT = 12.0
+
+    datasets[datasets > SIZESHIFT] = SIZESHIFT  # TODO: very arbituate!
+    datasets /= SIZESHIFT  # round up to 0 ~ 1
     # import pdb; pdb.set_trace()
 
     # datasets = load_data(dataset)
@@ -391,7 +393,7 @@ def test_rbm(learning_rate=0.1, training_epochs = 9, # 15
 
         # go through the training set
         mean_cost = []
-        print 'Going through the training set...'
+        # print 'Going through the training set...'
         for batch_index in xrange(n_train_batches):
             mean_cost += [train_rbm(batch_index)]
 
@@ -406,9 +408,12 @@ def test_rbm(learning_rate=0.1, training_epochs = 9, # 15
             X = rbm.W.get_value(borrow=True).T,
             # img_shape = (28,28),tile_shape = (10,10),
             img_shape = (freq_rows,timebins_cols),tile_shape = (20,25),
-            tile_spacing=(1,1))
+            tile_spacing=(1,1),
+            scale_rows_to_unit_interval = False, 
+            output_pixel_vals = False)
+
         # image.save('filters_at_epoch_%i.png'%epoch)
-        pylab.imshow(spec2log(filter_image))
+        pylab.imshow(spec2log(filter_image * SIZESHIFT))
         pylab.savefig('filters_at_epoch_%i.png'%epoch)
         pylab.clf()
 
@@ -436,7 +441,7 @@ def test_rbm(learning_rate=0.1, training_epochs = 9, # 15
             test_set_x.get_value(borrow=True)[test_idx:test_idx+n_chains],
             dtype=theano.config.floatX))
 
-    plot_every = 50 # 1000
+    plot_every = 150 # 1000
 
     print 'Gibbs sampling...'
     # define one step of Gibbs sampling (mf = mean-field)
@@ -485,14 +490,16 @@ def test_rbm(learning_rate=0.1, training_epochs = 9, # 15
         sample_image_data = tile_raster_images(X = vis_mf,
                                       img_shape = (freq_rows,timebins_cols),
                                       tile_shape = (1, n_chains),
-                                      tile_spacing = (1,1))
+                                      tile_spacing = (1,1),
+                                      scale_rows_to_unit_interval = False, 
+                                      output_pixel_vals = False)
 
         for ich in xrange(n_chains):
             start = ich * (1+timebins_cols)
             end = start + timebins_cols
             imgdata = sample_image_data[:, start:end]
 
-            pylab.imshow(spec2log(imgdata))
+            pylab.imshow(spec2log(imgdata * SIZESHIFT))
             fname = 'spec_generative_%d_%d' % (idx, ich)
             pylab.savefig('%s.png' % fname)
             pylab.clf()
@@ -505,7 +512,7 @@ def test_rbm(learning_rate=0.1, training_epochs = 9, # 15
     cPickle.dump(image_data, datafile)
     datafile.close()
 
-    pylab.imshow(spec2log(image_data))
+    pylab.imshow(spec2log(image_data * SIZESHIFT))
     pylab.savefig('spec_samples.png')
     pylab.clf()
     os.chdir('../')

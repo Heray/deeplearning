@@ -292,10 +292,10 @@ class RBM(object):
 
 
 
-def test_rbm(learning_rate=0.1, training_epochs = 1,
-             dataset='../data/mnist.pkl.gz', batch_size = 20,
-             n_chains = 20, n_samples = 1, output_folder = 'simple_rbm_plots',
-             n_hidden = 500):
+def test_rbm(learning_rate=0.1, training_epochs = 15,
+             dataset='../../data/mnist.pkl.gz', batch_size = 20,
+             n_chains = 20, n_samples = 5, output_folder = 'simple_rbm_plots',
+             n_hidden = 50):
     """
     Demonstrate how to train and afterwards sample from it using Theano.
 
@@ -320,7 +320,7 @@ def test_rbm(learning_rate=0.1, training_epochs = 1,
     test_set_x , test_set_y  = datasets[2]
 
     # import pdb; pdb.set_trace()
-    train_set_x.set_value(train_set_x.get_value()[:40])
+    train_set_x.set_value(train_set_x.get_value()[:120])
     test_set_x.set_value(test_set_x.get_value()[:40])
 
     # compute number of minibatches for training, validation and testing

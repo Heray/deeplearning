@@ -293,10 +293,10 @@ class RBM(object):
 
 
 
-def test_rbm(learning_rate=0.1, training_epochs = 15, # 15
-             dataset='../data/mnist.pkl.gz', batch_size = 20, # 20
-             n_chains = 20, n_samples = 10, output_folder = 'wav_rbm_plots',
-             n_hidden = 500, freq_rows=1, timebins_cols=1000):
+def test_rbm(learning_rate=0.1, training_epochs = 4, # 15
+             dataset='../data/mnist.pkl.gz', batch_size = 10, # 20
+             n_chains = 15, n_samples = 1, output_folder = 'wav_rbm_plots',
+             n_hidden = 500, freq_rows=1, timebins_cols=13000):
     """
     Demonstrate how to train and afterwards sample from it using Theano.
 
@@ -316,10 +316,9 @@ def test_rbm(learning_rate=0.1, training_epochs = 15, # 15
 
     """
 
-
-    dataset = '../sound_processing/wav_data_146.pkl.gz'
+    dataset = '/home/heray/Workspace/data/rbm_training_input/wav_overlapsize_160/wav_begin.pkl.gz'
     f = gzip.open(dataset,'rb')
-    datasets = cPickle.load(f)[:140, :]
+    datasets = cPickle.load(f)[:, :]
     f.close()
 
     # datasets = load_data(dataset)
@@ -328,7 +327,7 @@ def test_rbm(learning_rate=0.1, training_epochs = 15, # 15
     #test_set_x , test_set_y  = datasets[2]
 
     train_set_x = theano.shared(datasets)
-    test_set_x = theano.shared(datasets[:40, :])
+    test_set_x = theano.shared(datasets[:, :])
 
     # compute number of minibatches for training, validation and testing
     #n_train_batches = train_set_x.get_value(borrow=True).shape[0] / batch_size
@@ -378,7 +377,7 @@ def test_rbm(learning_rate=0.1, training_epochs = 15, # 15
 
         # go through the training set
         mean_cost = []
-        print 'Going through the training set...'
+        # print 'Going through the training set...'
         for batch_index in xrange(n_train_batches):
             mean_cost += [train_rbm(batch_index)]
 
@@ -420,7 +419,7 @@ def test_rbm(learning_rate=0.1, training_epochs = 15, # 15
             test_set_x.get_value(borrow=True)[test_idx:test_idx+n_chains],
             dtype=theano.config.floatX))
 
-    plot_every = 1000
+    plot_every = 50
 
     print 'Gibbs sampling...'
     # define one step of Gibbs sampling (mf = mean-field)
@@ -470,12 +469,16 @@ def test_rbm(learning_rate=0.1, training_epochs = 15, # 15
         wav_data = tile_raster_images(X = vis_mf,
                                       img_shape = (freq_rows,timebins_cols),
                                       tile_shape = (1, n_chains),
-                                      tile_spacing = (1,1))
+                                      tile_spacing = (1,1),
+                                      scale_rows_to_unit_interval = False, 
+                                      output_pixel_vals = False)
 
         for ich in xrange(n_chains):
             start = ich * (1+timebins_cols)
             end = start + timebins_cols
             wdata = wav_data[0, start:end]
+            wdata = (wdata - 0.5) * (2**16)
+
             wav_dataset.append(wdata)
 
             pylab.plot(wdata, 'b')
@@ -483,7 +486,7 @@ def test_rbm(learning_rate=0.1, training_epochs = 15, # 15
             pylab.savefig('%s.png' % fname)
             pylab.clf()
 
-            W.write('%s.wav' % fname, 1600, wdata)
+            W.write('%s.wav' % fname, 22050, wdata)
 
         image_data[(freq_rows+1)*idx:(freq_rows+1)*idx+freq_rows, :] = wav_data
 
